@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify
 import pandas as pd 
+import joblib
 
 app= Flask(__name__)
 
@@ -63,15 +64,15 @@ def summary_stats():
         "port_utilization": f"{utilization}%"  # Or just return the number if you want formatting on frontend
     })
 
-# API endpoint to get monthly ship count
-@app.route('/api/monthly_ship_count')
-def monthly_ship_count():
-    df=load_port_data()
-    monthly_counts=df.groupby('Month')['SHIP_ID'].count().sort_index()
-    return jsonify({
-        "labels": [str(label) for label in monthly_counts.index],  #Dates in string format ex: "2020-09"
-        "values": [int(value) for value in monthly_counts.values]  # Count of ships in integer format at that date
-    })
+# # API endpoint to get monthly ship count
+# @app.route('/api/monthly_ship_count')
+# def monthly_ship_count():
+#     df=load_port_data()
+#     monthly_counts=df.groupby('Month')['SHIP_ID'].count().sort_index()
+#     return jsonify({
+#         "labels": [str(label) for label in monthly_counts.index],  #Dates in string format ex: "2020-09"
+#         "values": [int(value) for value in monthly_counts.values]  # Count of ships in integer format at that date
+#     })
 
 
 # API endpoint to get top 5 ship types
@@ -202,7 +203,83 @@ def average_berth_duration():
     })
 
 
+# @app.route('/api/predict_monthly_ship_count')
+# def predict_monthly_ship_count():
+
+#     # Load the saved model
+#     model = joblib.load('/home/dhanjay/Desktop/Kandla_Port_Dashboard/prophet_model_ship_monthlyCnt.pkl')
+
+#     # Load original data to know last date
+#     df = pd.read_csv("/home/dhanjay/Desktop/Kandla_Port_Dashboard/monthly_ship_counts_(2016-2025).csv", on_bad_lines='skip')
+#     df.rename(columns={'Date': 'ds', 'Ship_Count': 'y'}, inplace=True)
+#     df['ds'] = pd.to_datetime(df['ds'], format='%Y-%m')
+
+#     # Create future dataframe (6 months ahead)
+#     future = model.make_future_dataframe(periods=6, freq='M')
+#     forecast = model.predict(future)
+
+#     # Filter only the new forecasted months
+#     future_forecast = forecast[forecast['ds'] > df['ds'].max()]
+
+#     return jsonify({
+#         "labels": future_forecast['ds'].dt.strftime('%Y-%m').tolist(),
+#         "values": future_forecast['yhat'].round(0).tolist()
+#     })
+
+
+# Combined api for monthly ship count and forecast
+@app.route('/api/monthly_ship_count_and_forecast')
+def monthly_ship_count_and_forecast():
+    
+    # Load original data
+    df = pd.read_csv("/home/dhanjay/Desktop/Kandla_Port_Dashboard/monthly_ship_counts_(2016-2025).csv", on_bad_lines='skip')
+    df.rename(columns={'Date': 'ds', 'Ship_Count': 'y'}, inplace=True)
+    df['ds'] = pd.to_datetime(df['ds'], format='%Y-%m')
+
+    # Historical data
+    historical_labels = df['ds'].dt.strftime('%Y-%m').tolist()
+    historical_values = df['y'].astype(int).tolist()
+
+    # Load saved Prophet model
+    model = joblib.load('/home/dhanjay/Desktop/Kandla_Port_Dashboard/prophet_model_ship_monthlyCnt.pkl')
+
+    # Forecast 6 months ahead
+    future = model.make_future_dataframe(periods=7, freq='M')
+    forecast = model.predict(future)
+
+    # Filter future only
+    # future_forecast = forecast[forecast['ds'] > df['ds'].max()]
+     # Convert to 'YYYY-MM' for precise filtering
+    last_month_str = df['ds'].max().strftime('%Y-%m')
+    forecast['month_str'] = forecast['ds'].dt.strftime('%Y-%m')
+    # Filter only unseen future months
+    future_forecast = forecast[forecast['month_str'] > last_month_str]
+
+    predicted_labels = future_forecast['ds'].dt.strftime('%Y-%m').tolist()
+    predicted_values = future_forecast['yhat'].round(0).astype(int).tolist()
+
+    # future_forecast = forecast[forecast['ds'] > last_month]
+    # predicted_labels = future_forecast['ds'].dt.strftime('%Y-%m').tolist()
+    # predicted_values = future_forecast['yhat'].round(0).astype(int).tolist()
+    print(predicted_labels)
+
+    return jsonify({
+        "historical": {
+            "labels": historical_labels,
+            "values": historical_values
+        },
+        "predicted": {
+            "labels": predicted_labels,
+            "values": predicted_values
+        }
+    })
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
 
 
