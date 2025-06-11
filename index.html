@@ -104,9 +104,9 @@
             </div>
         </div>
     
-        <div class="row">
+        <!-- <div class="row"> -->
             <!-- Monthly Ship Count -->
-            <div class="col-xl-8 col-lg-7">
+            <!-- <div class="col-xl-8 col-lg-7">
             <div class="card shadow-sm dashboard-card mb-4">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0"><i class="bi bi-graph-up text-primary"></i> Monthly Ship Count</h5>
@@ -124,7 +124,35 @@
                 <canvas id="monthlyShipChart"></canvas>
                 </div>
             </div>
-            </div>
+            </div> -->
+
+            <!-- NEW API MONTHY+FORECASTED SHIP COUNTS -->
+            <div class="row">
+              <!-- Monthly Ship Count -->
+              <div class="col-xl-8 col-lg-7">
+                <div class="card shadow-sm dashboard-card mb-4">
+                  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                      <i class="bi bi-graph-up text-primary"></i> Monthly Ship Count
+                    </h5>
+                    <div class="dropdown">
+                      <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Export Data</a></li>
+                        <li><a class="dropdown-item" href="#">Print Chart</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <canvas id="monthlyShipChart"></canvas>
+                  </div>
+                </div>
+              </div>
+            
+      
+            
     
             <!-- Top Ship Types -->
             <div class="col-xl-4 col-lg-5">
@@ -249,7 +277,7 @@
   document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
 
   // Monthly Ship Count Chart
-  fetch('/api/monthly_ship_count')
+  /*fetch('/api/monthly_ship_count')
     .then(response => response.json())
     .then(data => {
       const ctx = document.getElementById('monthlyShipChart').getContext('2d');
@@ -278,7 +306,67 @@
           }
         }
       });
-    });
+    }); */
+
+    //NEW API FOR MONTHLY+FORECASTED SHIP CNTS
+    // Fetch and display combined historical + forecasted ship count
+    fetch('/api/monthly_ship_count_and_forecast')
+      .then(response => response.json())
+      .then(data => {
+        const allLabels = [...data.historical.labels, ...data.predicted.labels];
+        const historicalData = data.historical.values;
+        const predictedData = data.predicted.values;
+
+        // Combined values: historical followed by nulls for predicted part (for bar chart)
+        const historicalValues = [...historicalData, ...new Array(predictedData.length).fill(null)];
+        const predictedValues = [...new Array(historicalData.length).fill(null), ...predictedData];
+
+        const ctx = document.getElementById('monthlyShipChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: allLabels,
+            datasets: [
+              {
+                label: 'Historical Ship Count',
+                data: historicalValues,
+                backgroundColor: 'rgba(78, 115, 223, 0.6)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1,
+                type: 'bar'
+              },
+              {
+                label: 'Forecasted Ship Count',
+                data: predictedValues,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderDash: [5, 5],
+                fill: true,
+                tension: 0.3,
+                type: 'line',
+                pointRadius: 3,
+                pointHoverRadius: 5
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              x: { ticks: { autoSkip: true } },
+              y: { beginAtZero: true }
+            },
+            plugins: {
+              legend: {
+                position: 'top'
+              },
+              tooltip: {
+                mode: 'index',
+                intersect: false
+              }
+            }
+          }
+        });
+      });
 
   // Top Ship Types Chart
   fetch('/api/top_ship_types')
