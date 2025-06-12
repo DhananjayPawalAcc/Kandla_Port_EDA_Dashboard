@@ -7,6 +7,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
   <style>
+    
+
     .dashboard-card {
       transition: transform 0.2s;
     }
@@ -16,10 +18,32 @@
     .stat-card {
       border-left: 4px solid;
     }
+
+    .all-container {
+        display: flex;
+        flex-direction: row; /* Ensures children are side-by-side */
+        height: 100vh;
+        width: 100vw;
+    }
+    .main-content {
+            flex: 0 0 75%; /* adjust to reduce width (e.g., 75% of the screen) */
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f4f4f4;
+        }
+
+    .insight-sidebar {
+            flex: 0 0 25%; /* this takes up 25% of width */
+            background-color: #ffffff;
+            border-left: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+        }
+    
   </style>
 </head>
 <body class="bg-light">
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: black;">
     <div class="container">
       <span class="navbar-brand mb-0 h1"><i class="bi bi-speedometer2"></i> Kandla Port Live Dashboard</span>
       <div class="d-flex">
@@ -29,11 +53,14 @@
   </nav>
   
   <div class="container-fluid py-4">
+    <div class="all-container">
+    <div class="main-content">
     <div class="mb-3 text-center">
         <button class="btn btn-primary mx-2" onclick="toggleSection('port')">Show Port Charts</button>
         <button class="btn btn-danger mx-2" onclick="toggleSection('berth')">Show Berth Charts</button>
       </div>
 
+      
       <div id="portCharts">
         <!-- Keep all PORT-related rows and canvases here -->
 
@@ -104,27 +131,7 @@
             </div>
         </div>
     
-        <!-- <div class="row"> -->
-            <!-- Monthly Ship Count -->
-            <!-- <div class="col-xl-8 col-lg-7">
-            <div class="card shadow-sm dashboard-card mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0"><i class="bi bi-graph-up text-primary"></i> Monthly Ship Count</h5>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#">Export Data</a></li>
-                    <li><a class="dropdown-item" href="#">Print Chart</a></li>
-                    </ul>
-                </div>
-                </div>
-                <div class="card-body">
-                <canvas id="monthlyShipChart"></canvas>
-                </div>
-            </div>
-            </div> -->
+       
 
             <!-- NEW API MONTHY+FORECASTED SHIP COUNTS -->
             <div class="row">
@@ -223,7 +230,7 @@
     
 
 
-      </div>
+      <!-- </div> -->
       
       
       <div id="berthCharts" style="display: none;">
@@ -257,8 +264,8 @@
           <canvas id="avgBerthChart" height="120"></canvas>
 
       </div>
-      
-    
+<!-- ************************************************************************** MAIN CONTENT END ********************************************************** -->
+  
   
 
   
@@ -268,6 +275,28 @@
       <p class="mb-0">© 2025 Kandla Port Dashboard. All rights reserved.</p>
     </div>
   </footer>
+  </div>
+
+
+<!-- New Sidebar -->
+<div class="insight-sidebar" id="insight-sidebar">
+    <h3>AI Data Analysis and Improvements</h3>
+    <div class="generate_btn">
+        <button onclick="generateInsight()" style="
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+        ">Generate Insight</button>
+    </div>
+    <div id="insight-content">
+        <p>No insights yet. Click the button above to generate.</p>
+    </div>
+    <!-- <p>Insights from the model will appear here...</p> -->
+</div>
+</div>
+</div>
+
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -276,6 +305,21 @@
   // Update last updated time
   document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
 
+  function generateInsight() {
+    fetch('/api/generate_insight')
+        .then(response => response.json())
+        .then(data => {
+            const converter = new showdown.Converter();
+            const htmlContent = converter.makeHtml(data.insight);
+            document.getElementById('insight-content').innerHTML = htmlContent;
+            document.getElementById('insight-sidebar').style.display = 'block';
+        })
+        .catch(error => {
+            document.getElementById('insight-content').innerText = "Error loading insight.";
+            document.getElementById('insight-sidebar').style.display = 'block';
+            console.error("Insight fetch error:", error);
+        });
+}
   // Monthly Ship Count Chart
   /*fetch('/api/monthly_ship_count')
     .then(response => response.json())
@@ -604,6 +648,21 @@
         berth.style.display = 'block';
     }
     }
+
+    function generateInsight() {
+    
+    fetch('/api/generate_insight')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('insight-content').innerText = data.insight;
+            document.getElementById('insight-sidebar').style.display = 'block';
+        })
+        .catch(error => {
+            document.getElementById('insight-content').innerText = "Error loading insight.";
+            document.getElementById('insight-sidebar').style.display = 'block';
+            console.error("Insight fetch error:", error);
+        });
+}
 
 
 
