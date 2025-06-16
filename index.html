@@ -279,18 +279,39 @@
 
 
 <!-- New Sidebar -->
-<div class="insight-sidebar" id="insight-sidebar">
-    <h3>AI Data Analysis and Improvements</h3>
-    <div class="generate_btn">
+<div class="insight-sidebar" id="insight-sidebar" style="background-color:black; color:white; padding:20px; border-radius:2px;">
+    <h3>Chart Analysis by AI</h3>
+    <hr>
+    <!-- Add this line to show current active section -->
+    <h5>Insights for: <span id="active-section">Port</span></h5>
+    <br>
+    
+    <div class="generate_btn"> 
+      
         <button onclick="generateInsight()" style="
-            padding: 10px 15px;
+            padding: 10px 20px;
             font-size: 14px;
+            font-weight: bold;
             cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;  /* Rounded edges */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            transition: background-color 0.3s ease;
+            
+            
         ">Generate Insight</button>
     </div>
-    <div id="insight-content">
-        <p>No insights yet. Click the button above to generate.</p>
-    </div>
+    <hr>
+     <!-- Two separate containers -->
+     <div id="port-insight-content">
+      <p>No Port insights yet. Click the button above to generate.</p>
+  </div>
+
+  <div id="berth-insight-content" style="display: none;">
+      <p>No Berth insights yet. Click the button above to generate.</p>
+  </div>
     <!-- <p>Insights from the model will appear here...</p> -->
 </div>
 </div>
@@ -635,34 +656,81 @@
     })
     .catch(error => console.error('Error loading average berth duration:', error));
 
+    let currentSection = 'port'; // default value
 
     function toggleSection(type) {
     const port = document.getElementById('portCharts');
     const berth = document.getElementById('berthCharts');
 
+    const insightSidebar = document.getElementById('insight-sidebar');
+    const portInsight = document.getElementById('port-insight-content');
+    const berthInsight = document.getElementById('berth-insight-content');
+    const activeSectionSpan = document.getElementById('active-section');
+
     if (type === 'port') {
         port.style.display = 'block';
         berth.style.display = 'none';
+
+        portInsight.style.display = 'block';
+        berthInsight.style.display = 'none';
+
+        if (activeSectionSpan) activeSectionSpan.innerText = 'Port';
+        currentSection = 'port';
     } else if (type === 'berth') {
         port.style.display = 'none';
         berth.style.display = 'block';
-    }
+
+        portInsight.style.display = 'none';
+        berthInsight.style.display = 'block';
+
+        if (activeSectionSpan) activeSectionSpan.innerText = 'Berth';
+        currentSection = 'berth';
     }
 
-    function generateInsight() {
+    insightSidebar.style.display = 'block'; // Show sidebar always
+}
+
+// ***************************working code ********************
+//     function generateInsight() {
     
-    fetch('/api/generate_insight')
+//     fetch('/api/generate_insight')
+//         .then(response => response.json())
+//         .then(data => {
+//             document.getElementById('insight-content').innerText = data.insight;
+//             document.getElementById('insight-sidebar').style.display = 'block';
+//         })
+//         .catch(error => {
+//             document.getElementById('insight-content').innerText = "Error loading insight.";
+//             document.getElementById('insight-sidebar').style.display = 'block';
+//             console.error("Insight fetch error:", error);
+//         });
+// }
+// *****************************************************************************************************
+
+function generateInsight() {
+    const portInsight = document.getElementById('port-insight-content');
+    const berthInsight = document.getElementById('berth-insight-content');
+
+    fetch('/api/generate_insight?section=' + currentSection)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('insight-content').innerText = data.insight;
-            document.getElementById('insight-sidebar').style.display = 'block';
+            if (currentSection === 'port') {
+                portInsight.innerHTML = `<p>${data.insight}</p>`;
+            } else {
+                berthInsight.innerHTML = `<p>${data.insight}</p>`;
+            }
         })
         .catch(error => {
-            document.getElementById('insight-content').innerText = "Error loading insight.";
-            document.getElementById('insight-sidebar').style.display = 'block';
-            console.error("Insight fetch error:", error);
+            if (currentSection === 'port') {
+                portInsight.innerHTML = `<p>Error loading port insight.</p>`;
+            } else {
+                berthInsight.innerHTML = `<p>Error loading berth insight.</p>`;
+            }
+            console.error("Error generating insight:", error);
         });
 }
+
+
 
 
 
